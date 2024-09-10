@@ -14,6 +14,10 @@
       action: "drain"
     user: root
   become: true
+  register: result
+  retries: 10
+  delay: 30
+  until: result is success
   when: container_info._containers | length > 0
 
 - name: Restart rabbitmq container
