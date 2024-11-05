@@ -96,3 +96,5 @@ ovn_sb_command: >-
   --ovn-sb-logfile=/var/log/kolla/openvswitch/ovn-sb-db.log
 # Workaround: pause after restarting containers to allow for leader election.
 ovn_leader_election_pause: 5
+# Timeout for starting a new election in milliseconds
+ovn_cluster_election_timer: 2000

@@ -56,3 +56,81 @@
   until: check_ovn_sb_db_port is success
   retries: 10
   delay: 6
+
+# NOTE(Yosef): In high-load OVN clusters, the default 1-second election timeout of
+# the Raft algorithm can lead to unnecessary leader elections when the leader node
+# is busy. To mitigate this, we can adjust the election timeout using the
+# `ovs-appctl cluster/change-election-timer` command to a more suitable value.
+# Important considerations:
+# - `ovs-appctl` allows setting the timeout to a maximum of 2X the current election
+#   timeout, necessitating multiple steps for larger adjustments.
+# - If you want to set the election timeout to Y seconds, follow these steps:
+# 1. Retrieve the current election timeout value.
+# 2. If Y seconds is less than the current timeout:
+#    - Set the election timeout to Y seconds directly.
+# 3. If Y seconds is greater than the current timeout:
+#    - Loop the minimum number of iterations needed to reach Y seconds(log2(Y-1)/CURRENT):
+#      - If it's the last iteration:
+#        - Set the election timeout to Y seconds.
+#      - Otherwise:
+#        - Set the election timeout to 2X the previous timeout.
+#      - Wait for 5 seconds to allow for cooldown.
+# Example: To adjust the election timeout from 3 seconds to 16 seconds:
+# Loop => for i in range (1, 2 + (Log2(15/3) ~= 2)) => 1, 2, 3
+# Step 1: Set to 6 seconds (3 * 2)
+# Step 2: Set to 12 seconds (6 * 2)
+# Step 3: Set to 16 seconds
+- name: Get current election timer for sb and nb dbs
+  set_fact:
+    ovn_sb_current_election_timer: "{{ (ovn_sb_cluster_status.stdout | regex_search('Election timer: ([0-9]+)', '\\1'))[0] }}"
+    ovn_nb_current_election_timer: "{{ (ovn_nb_cluster_status.stdout | regex_search('Election timer: ([0-9]+)', '\\1'))[0] }}"
+
+- name: Configure Southbound election-timer
+  vars:
+    search_string: "Role: leader"
+  when: ovn_sb_cluster_status is search(search_string)
+  become: true
+  block:
+    - name: Configure Southbound election-timer increasing
+      shell: >
+        {{ kolla_container_engine }} exec ovn_sb_db ovs-appctl -t /var/run/ovn/ovnsb_db.ctl cluster/change-election-timer OVN_Southbound
+        {% if ansible_loop.last %}{{ ovn_cluster_election_timer }}{% else %}{{ 2 ** item | int * ovn_sb_current_election_timer | int }}{% endif %}
+      loop: >
+        {{ (range(1, 2 + ((ovn_cluster_election_timer | int - 1) / (ovn_sb_current_election_timer | int)) | log(2) | int)) | list }}
+      loop_control:
+        extended: true
+        pause: 5
+      when:
+        - ovn_sb_current_election_timer | int < ovn_cluster_election_timer | int
+
+    - name: Configure Southbound election-timer decreasing
+      shell: >
+        {{ kolla_container_engine }} exec ovn_sb_db ovs-appctl -t /var/run/ovn/ovnsb_db.ctl
+        cluster/change-election-timer OVN_Southbound {{ ovn_cluster_election_timer }}
+      when:
+        - ovn_sb_current_election_timer | int > ovn_cluster_election_timer | int
+
+- name: Configure Northbound election-timer
+  vars:
+    search_string: "Role: leader"
+  when: ovn_nb_cluster_status is search(search_string)
+  become: true
+  block:
+    - name: Configure Northbound election-timer increasing
+      shell: >
+        {{ kolla_container_engine }} exec ovn_nb_db ovs-appctl -t /var/run/ovn/ovnnb_db.ctl cluster/change-election-timer OVN_Northbound
+        {% if ansible_loop.last %}{{ ovn_cluster_election_timer }}{% else %}{{ 2 ** item | int * ovn_nb_current_election_timer | int }}{% endif %}
+      loop: >
+        {{ (range(1, 2 + ((ovn_cluster_election_timer | int - 1) / (ovn_nb_current_election_timer | int)) | log(2) | int)) | list }}
+      loop_control:
+        extended: true
+        pause: 5
+      when:
+        - ovn_nb_current_election_timer | int < ovn_cluster_election_timer | int
+
+    - name: Configure Northbound election-timer decreasing
+      shell: >
+        {{ kolla_container_engine }} exec ovn_nb_db ovs-appctl -t /var/run/ovn/ovnnb_db.ctl
+        cluster/change-election-timer OVN_Northbound {{ ovn_cluster_election_timer }}
+      when:
+        - ovn_nb_current_election_timer | int > ovn_cluster_election_timer | int
