@@ -269,9 +269,7 @@ prometheus_blackbox_exporter_endpoints_default:
       - "{{ ('placement_internal:os_endpoint:' + placement_internal_endpoint) if not kolla_same_external_internal_vip | bool }}"
     enabled: "{{ enable_placement | bool }}"
   - endpoints:
-      - "skyline_apiserver:os_endpoint:{{ skyline_apiserver_public_endpoint }}"
-      - "{{ ('skyline_apiserver_internal:os_endpoint:' + skyline_apiserver_internal_endpoint) if not kolla_same_external_internal_vip | bool }}"
-      - "skyline_console:os_endpoint:{{ skyline_console_public_endpoint }}"
+      - "skyline_console:http_2xx:{{ skyline_console_public_endpoint }}"
       - "{{ ('skyline_console_internal:os_endpoint:' + skyline_console_internal_endpoint) if not kolla_same_external_internal_vip | bool }}"
     enabled: "{{ enable_skyline | bool }}"
   - endpoints:
