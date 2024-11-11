@@ -72,7 +72,6 @@ masakari_database_shard:
     - schema: "{{ masakari_database_name }}"
       shard_id: "{{ masakari_database_shard_id }}"
 
-
 ####################
 # Docker
 ####################
@@ -129,7 +128,6 @@ masakari_hostmonitor_default_volumes:
   - "kolla_logs:/var/log/kolla/"
   - "{{ kolla_dev_repos_directory ~ '/masakari-monitors/masakarimonitors:/var/lib/kolla/venv/lib/python' ~ distro_python_version ~ '/site-packages/masakarimonitors' if masakari_dev_mode | bool else '' }}"
 
-
 ####################
 # OpenStack
 ####################
@@ -162,8 +160,8 @@ masakari_ks_services:
     type: "instance-ha"
     description: "OpenStack High Availability"
     endpoints:
-      - {'interface': 'internal', 'url': '{{ masakari_internal_endpoint }}'}
-      - {'interface': 'public', 'url': '{{ masakari_public_endpoint }}'}
+      - { "interface": "internal", "url": "{{ masakari_internal_endpoint }}" }
+      - { "interface": "public", "url": "{{ masakari_public_endpoint }}" }
 
 masakari_ks_users:
   - project: "service"
@@ -181,3 +179,28 @@ libvirt_sasl_authname: "nova"
 # List of enabled libvirt SASL authentication mechanisms.
 libvirt_sasl_mech_list:
   - "{{ 'SCRAM-SHA-256' if libvirt_tls | bool else 'DIGEST-MD5' }}"
+
+# Driver that hostmonitor uses for monitoring hosts.
+# The available values are:
+# - "default": hostmonitor monitors hosts based on pacemaker & corosync
+# - "consul": hostmonitor monitors hosts based on consul.
+# <https://static.openstack.org/docs/masakari-monitors/latest/hostmonitor.html>
+masakari_hostmonitor_monitoring_driver: "default"
+# Monitoring interval(in seconds) of node status.
+masakari_hostmonitor_monitoring_interval: 60
+# Masakari consul's configurations
+# NOTE(kiennt26): Consul ships with a non-OSI-compliant BSL 1.1 license, and
+#                 is as such incompatible with OpenStack's license
+#                 policy. Therefore, you have to deploy Consul clusters yourself.
+# Consul internal binding interface
+masakari_consul_internal_interface: "{{ network_interface }}"
+# Consul internal http port
+masakari_consul_internal_port: "8500"
+# Consul storage binding interface
+masakari_consul_storage_interface: "{{ network_interface }}"
+# Consul storage http port
+masakari_consul_storage_port: "8500"
+# Consul management binding interface
+masakari_consul_management_interface: "{{ network_interface }}"
+# Consul management port
+masakari_consul_management_port: "8500"

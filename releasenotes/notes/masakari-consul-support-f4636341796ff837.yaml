@@ -1,0 +1,9 @@
+---
+features:
+  - |
+    Adds support for Masakari-hostmonitor Consul driver [1]. NOte that, Consul
+    ships with a non-OSI-compliant BSL 1.1 license, and is as such
+    incompatible with OpenStack's license policy. Therefore, you have to
+    deploy Consul clusters yourself.
+
+    [1] <https://static.openstack.org/docs/masakari-monitors/latest/hostmonitor.html>

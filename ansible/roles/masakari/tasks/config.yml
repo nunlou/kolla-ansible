@@ -108,6 +108,22 @@
   notify:
     - Restart {{ service_name }} container
 
+- name: Copying over maxtrix config file
+  vars:
+    service: "{{ masakari_services['masakari-hostmonitor'] }}"
+  merge_yaml:
+    sources:
+      - "{{ role_path }}/files/matrix.yaml"
+      - "{{ node_custom_config }}/masakari/masakari-hostmonitor/matrix.yaml"
+    dest: "{{ node_config_directory }}/masakari-hostmonitor/matrix.yaml"
+    mode: "0660"
+  become: true
+  when:
+    - service | service_enabled_and_mapped_to_host
+    - masakari_hostmonitor_monitoring_driver == "consul"
+  notify:
+    - Restart masakari-hostmonitor container
+
 - name: Copying over wsgi-masakari file for services
   vars:
     service: "{{ masakari_services['masakari-api'] }}"

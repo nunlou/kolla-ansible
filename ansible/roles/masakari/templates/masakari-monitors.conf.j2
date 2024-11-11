@@ -20,6 +20,10 @@ connection_uri = "qemu+tcp://{{ migration_interface_address | put_address_in_con
 
 {% if service_name == 'masakari-hostmonitor' %}
 [host]
+# Driver that hostmonitor uses for monitoring hosts.
+monitoring_driver = {{ masakari_hostmonitor_monitoring_driver }}
+# Monitoring interval(in seconds) of node status.
+monitoring_interval = {{ masakari_hostmonitor_monitoring_interval }}
 {#
   NOTE(yoctozepto): ``restrict_to_remotes`` is due to being unable to monitor
   both types at once and Kolla has remotes on dedicated computes so it is
@@ -33,11 +37,25 @@ restrict_to_remotes = True
   See https://bugs.launchpad.net/masakari-monitors/+bug/1933203
 #}
 disable_ipmi_check = True
+{% if masakari_hostmonitor_monitoring_driver == "default" %}
 {% if inventory_hostname in groups['hacluster'] %}
 pacemaker_node_type = cluster
 corosync_multicast_interfaces = {{ api_interface }}
 corosync_multicast_ports = {{ hacluster_corosync_port }}
 {% elif inventory_hostname in groups['hacluster-remote'] %}
 pacemaker_node_type = remote
+{% endif %}
+{% elif masakari_hostmonitor_monitoring_driver == "consul" %}
+[consul]
+# Addr for local consul agent in management datacenter.
+# The addr is make up of the agent's bind_addr and http port,
+# such as '192.168.101.1:8500'.
+agent_manage = "{{ hostvars[inventory_hostname]['ansible_' + masakari_consul_management_interface | replace('-','_')].ipv4.address | put_address_in_context('url') }}:{{ masakari_consul_management_port }}"
+# Addr for local consul agent in tenant datacenter.
+agent_tenant = "{{ hostvars[inventory_hostname]['ansible_' + masakari_consul_internal_interface | replace('-','_')].ipv4.address | put_address_in_context('url') }}:{{ masakari_consul_internal_port }}"
+# Addr for local consul agent in storage datacenter.
+agent_storage = "{{ hostvars[inventory_hostname]['ansible_' + masakari_consul_storage_interface | replace('-','_')].ipv4.address | put_address_in_context('url') }}:{{ masakari_consul_storage_port }}"
+# Config file for consul health action matrix.
+matrix_config_file = /etc/masakari-monitors/matrix.yaml
 {% endif %}
 {% endif %}

@@ -890,3 +890,31 @@ workaround_ansible_issue_8743: yes
 # If `etcd_remove_deleted_members` is enabled, Kolla Ansible will automatically
 # remove etcd members from the cluster that are no longer in the inventory.
 #etcd_remove_deleted_members: "no"
+
+####################
+# Masakari options
+####################
+# Driver that hostmonitor uses for monitoring hosts.
+# The available values are:
+# - "default": hostmonitor monitors hosts based on pacemaker & corosync
+# - "consul": hostmonitor monitors hosts based on consul.
+# <https://static.openstack.org/docs/masakari-monitors/latest/hostmonitor.html>
+# masakari_hostmonitor_monitoring_driver: "default"
+# Monitoring interval(in seconds) of node status.
+# masakari_hostmonitor_monitoring_interval: 60
+# Masakari consul's configurations
+# NOTE(kiennt26): Consul ships with a non-OSI-compliant BSL 1.1 license, and
+#                 is as such incompatible with OpenStack's license
+#                 policy. Therefore, you have to deploy Consul clusters yourself.
+# Consul internal binding interface
+# masakari_consul_internal_interface: "enp0s7"
+# Consul internal http port
+# masakari_consul_internal_port: "8500"
+# Consul storage binding interface
+# masakari_consul_storage_interface: "enp0s8"
+# Consul storage http port
+# masakari_consul_storage_port: "8500"
+# Consul management binding interface
+# masakari_consul_management_interface: "enp0s9"
+# Consul management port
+# masakari_consul_management_port: "8500"
