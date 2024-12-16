@@ -3,7 +3,7 @@
 # first step since several plays below require them when
 # building their configurations.
 - name: Gather facts for all hosts
-  hosts: all
+  hosts: all:!ironic-node
   max_fail_percentage: >-
     {{ gather_facts_max_fail_percentage |
        default(kolla_max_fail_percentage) |
@@ -13,7 +13,7 @@
   tasks:
     - name: Group hosts to determine when using --limit
       group_by:
-        key: "all_using_limit_{{ (ansible_play_batch | length) != (groups['all'] | length) }}"
+        key: "all_using_limit_{{ (ansible_play_batch | length) != ((groups['all'] | difference(groups['ironic-node'])) | length) }}"
       changed_when: false
 
     - name: Gather facts
@@ -32,7 +32,7 @@
 # NOTE(mgoddard): Divide all hosts to be queried between the hosts selected via
 # the limit.
 - name: Gather facts for all hosts (if using --limit)
-  hosts: all_using_limit_True
+  hosts: all_using_limit_True:!ironic-node
   max_fail_percentage: >-
     {{ gather_facts_max_fail_percentage |
        default(kolla_max_fail_percentage) |
@@ -44,7 +44,7 @@
     batch_size: "{{ ansible_play_batch | length }}"
     # Use a python list slice to divide the group up.
     # Syntax: [<start index>:<end index>:<step size>]
-    delegate_hosts: "{{ groups['all'][batch_index | int::batch_size | int] }}"
+    delegate_hosts: "{{ groups['all'][batch_index | int::batch_size | int] | difference(groups['ironic-node']|default([])) }}"
   tasks:
     - name: Gather facts
       setup:
