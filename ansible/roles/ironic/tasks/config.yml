@@ -146,45 +146,6 @@
   notify:
     - Restart ironic-tftp container
 
-- name: Copying ironic-agent kernel and initramfs (PXE)
-  vars:
-    service: "{{ ironic_services['ironic-tftp'] }}"
-  copy:
-    src: "{{ ironic_agent_files_directory }}/ironic/{{ item }}"
-    dest: "{{ node_config_directory }}/ironic-tftp/{{ item }}"
-    mode: "0660"
-  become: true
-  with_items:
-    - "ironic-agent.kernel"
-    - "ironic-agent.initramfs"
-  when:
-    # Only required when Ironic inspector is in use.
-    - groups['ironic-inspector'] | length > 0
-    - inventory_hostname in groups[service.group]
-    - service.enabled | bool
-    - not ironic_dnsmasq_serve_ipxe | bool
-  notify:
-    - Restart ironic-tftp container
-
-- name: Copying ironic-agent kernel and initramfs (iPXE)
-  vars:
-    service: "{{ ironic_services['ironic-http'] }}"
-  copy:
-    src: "{{ ironic_agent_files_directory }}/ironic/{{ item }}"
-    dest: "{{ node_config_directory }}/ironic-http/{{ item }}"
-    mode: "0660"
-  become: true
-  with_items:
-    - "ironic-agent.kernel"
-    - "ironic-agent.initramfs"
-  when:
-    # Only required when Ironic inspector is in use.
-    - groups['ironic-inspector'] | length > 0
-    - inventory_hostname in groups[service.group]
-    - service.enabled | bool
-  notify:
-    - Restart ironic-http container
-
 - name: Copying inspector.ipxe
   vars:
     service: "{{ ironic_services['ironic-http'] }}"
