@@ -95,7 +95,7 @@ neutron_services:
     image: "{{ neutron_sriov_agent_image_full }}"
     privileged: True
     enabled: "{{ enable_neutron_sriov | bool and neutron_plugin_agent not in ['vmware_nsxv', 'vmware_nsxv3', 'vmware_nsxp'] }}"
-    host_in_groups: "{{ inventory_hostname in groups['network_optimized'] }}"
+    host_in_groups: "{{ inventory_hostname in groups['compute'] }}"
     volumes: "{{ neutron_sriov_agent_default_volumes + neutron_sriov_agent_extra_volumes }}"
     dimensions: "{{ neutron_sriov_agent_dimensions }}"
     healthcheck: "{{ neutron_sriov_agent_healthcheck }}"
